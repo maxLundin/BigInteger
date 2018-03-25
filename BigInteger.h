@@ -29,11 +29,11 @@ class BigInteger {
 
 public:
 
-    BigInteger(long long int x);
+    //BigInteger(long long int x);
 
     std::vector<unsigned int> digits;
 
-    //explicit BigInteger(long long value = 0);
+    explicit BigInteger(long long value = 0);
 
     BigInteger(const BigInteger &);
 

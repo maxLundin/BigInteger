@@ -180,6 +180,15 @@ unsigned int toInteger(char ch) {
     return (ch - '0');
 }
 
+unsigned long long toInteger(std::string str) {
+    unsigned long long answer = 0;
+	for (int i = 0 ; i < str.length() ; i++){
+    	answer *= 10;
+		answer += toInteger(str[i]); 
+    }
+    return answer;
+}
+
 std::ostream &operator<<(std::ostream &stream, BigInteger &curr) {
     if (curr.digits.empty() || (curr.digits.size() == 1 && curr.digits[0] == 0)) {
         stream << 0;
