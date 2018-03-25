@@ -41,8 +41,6 @@ public:
 
     BigInteger(BigInteger &&);
 
-    BigInteger();
-
     BigInteger &operator+=(const BigInteger &);
 
     BigInteger &operator*=(const BigInteger &);

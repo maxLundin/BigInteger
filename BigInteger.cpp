@@ -1,10 +1,5 @@
 #include "BigInteger.h"
 
-BigInteger::BigInteger() {
-    digits.push_back(0);
-    sign = 0;
-}
-
 BigInteger::BigInteger(long long x) {
     if (x < 0) {
         sign = -1;
