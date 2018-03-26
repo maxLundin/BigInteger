@@ -87,7 +87,6 @@ BigInteger &BigInteger::operator-=(const BigInteger &other) {
                 digits[other.digits.size()] += propagate;
             }
             cutBadZero();
-
         } else {
             BigInteger m = other - n;
             m.sign = this->sign * (-1);
