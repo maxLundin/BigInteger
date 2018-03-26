@@ -114,8 +114,6 @@ BigInteger BigInteger::operator-(const BigInteger &other) const {
 }
 
 void BigInteger::cutBadZero() {
-//    std::cout << digits.size() << std::endl;
-//    std::cout << digits[0] << std::endl;
     while ((int) digits.size() > 1 && digits.back() == 0) {
         digits.pop_back();
     }
@@ -179,7 +177,7 @@ unsigned long long toInteger(std::string str) {
     unsigned long long answer = 0;
 	for (int i = 0 ; i < str.length() ; i++){
     	answer *= 10;
-		answer += toInteger(str[i]); 
+		answer += toInteger(str[i]);
     }
     return answer;
 }
