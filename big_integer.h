@@ -15,8 +15,6 @@ struct big_integer {
 
     void cutBadZero();
 
-    void addToResut(big_integer& Result, int shift);
-
     std::string to_string();
 
     friend std::string to_string(big_integer const &a);
@@ -40,6 +38,8 @@ struct big_integer {
     big_integer(big_integer const &other);
 
     big_integer(int a);
+
+    big_integer(size_t a, bool);
 
     explicit big_integer(std::string const &str);
 
@@ -65,47 +65,72 @@ struct big_integer {
 
     big_integer &operator-=(const big_integer &);
 
-    friend bool operator==(big_integer const& a, big_integer const& b);
-    friend bool operator!=(big_integer const& a, big_integer const& b);
-    friend bool operator<(big_integer const& a, big_integer const& b);
-    friend bool operator>(big_integer const& a, big_integer const& b);
-    friend bool operator<=(big_integer const& a, big_integer const& b);
-    friend bool operator>=(big_integer const& a, big_integer const& b);
+    friend bool operator==(big_integer const &a, big_integer const &b);
+
+    friend bool operator!=(big_integer const &a, big_integer const &b);
+
+    friend bool operator<(big_integer const &a, big_integer const &b);
+
+    friend bool operator>(big_integer const &a, big_integer const &b);
+
+    friend bool operator<=(big_integer const &a, big_integer const &b);
+
+    friend bool operator>=(big_integer const &a, big_integer const &b);
 
     big_integer &operator<<=(short shift);
 
     big_integer &operator>>=(short shift);
 
     big_integer operator+() const;
+
     big_integer operator-() const;
+
     big_integer operator~();
 
 
+    big_integer &operator++();
 
-    big_integer& operator++();
+    big_integer &operator--();
 
-    big_integer& operator--();
+    big_integer &operator=(big_integer const &other);
 
-    big_integer& operator=(big_integer const& other);
+    short compare(const big_integer &other) const;
 
+    void divide(big_integer &res, const big_integer &a, const big_integer &b);
+
+    void mul_long_short1(const big_integer &first, const uint &second, big_integer &res);
+
+    void sub_equal(big_integer &a, const big_integer &b);
 };
 
-big_integer operator+(big_integer a, big_integer const& b);
-big_integer operator-(big_integer a, big_integer const& b);
-big_integer operator*(big_integer a, big_integer const& b);
-big_integer operator/(big_integer a, big_integer const& b);
-big_integer operator%(big_integer a, big_integer const& b);
+big_integer operator+(big_integer a, big_integer const &b);
 
-big_integer operator&(big_integer a, big_integer const& b);
-big_integer operator|(big_integer a, big_integer const& b);
-big_integer operator^(big_integer a, big_integer const& b);
+big_integer operator-(big_integer a, big_integer const &b);
+
+big_integer operator*(big_integer a, big_integer const &b);
+
+big_integer operator/(big_integer a, big_integer const &b);
+
+big_integer operator%(big_integer a, big_integer const &b);
+
+big_integer operator&(big_integer a, big_integer const &b);
+
+big_integer operator|(big_integer a, big_integer const &b);
+
+big_integer operator^(big_integer a, big_integer const &b);
 
 big_integer operator<<(big_integer a, int b);
+
 big_integer operator>>(big_integer a, int b);
 
-bool operator==(big_integer const& a, big_integer const& b);
-bool operator!=(big_integer const& a, big_integer const& b);
-bool operator<(big_integer const& a, big_integer const& b);
-bool operator>(big_integer const& a, big_integer const& b);
-bool operator<=(big_integer const& a, big_integer const& b);
-bool operator>=(big_integer const& a, big_integer const& b);
+bool operator==(big_integer const &a, big_integer const &b);
+
+bool operator!=(big_integer const &a, big_integer const &b);
+
+bool operator<(big_integer const &a, big_integer const &b);
+
+bool operator>(big_integer const &a, big_integer const &b);
+
+bool operator<=(big_integer const &a, big_integer const &b);
+
+bool operator>=(big_integer const &a, big_integer const &b);
