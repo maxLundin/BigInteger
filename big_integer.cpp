@@ -1,5 +1,7 @@
-#include <gmp.h>
+#include <vector>
 #include "big_integer.h"
+
+const uint64_t MAX_UINT32_IN_UINT64 = 4294967296u;
 
 big_integer::big_integer() {
     sign = 1;
@@ -13,14 +15,19 @@ big_integer::big_integer(int x) {
         sign = 1;
     }
     x = std::abs(x);
-    digits.push_back((unsigned int) (x));
+    digits.push_back((uint32_t)(x));
+}
 
+big_integer::big_integer(size_t x, bool flag) {
+    sign = 1;
+    digits.resize(x);
+    //digits.assign(x, 0);
 }
 
 big_integer::big_integer(const big_integer &other) {
     sign = other.sign;
     for (long long digit: other.digits) {
-        digits.push_back((unsigned int) (digit));
+        digits.push_back((uint32_t)(digit));
     }
 }
 
@@ -28,44 +35,42 @@ big_integer::big_integer(big_integer &&other) {
     digits.clear();
     sign = other.sign;
     for (long long digit: other.digits) {
-        digits.push_back((unsigned int) digit);
+        digits.push_back((uint32_t) digit);
     }
 }
 
 big_integer &big_integer::operator+=(const big_integer &other) {
     big_integer n(*this);
     if (sign == other.sign) {
-        unsigned long long propagate = 0;
-        for (unsigned int i = 0; i < std::max(digits.size(), other.digits.size()); i++) {
-            if (digits.size() == i) {
-                digits.push_back(0);
-            }
+        uint64_t propagate = 0;
+        while (digits.size() < other.digits.size()) {
+            digits.push_back(0);
+        }
+        for (uint32_t i = 0; i < std::max(digits.size(), other.digits.size()); i++) {
             if (other.digits.size() == i) {
-                for (unsigned int j = i; j < digits.size(); j++) {
-                    unsigned long long result = (unsigned long long) digits[j] + propagate;
+                for (uint32_t j = i; j < digits.size(); j++) {
+                    uint64_t result = (uint64_t) digits[j] + propagate;
                     propagate = (result >> 32);
-                    digits[j] = (unsigned int) (result & ((1LL << 33) - 1));
+                    digits[j] = (uint32_t)(result & ((1LL << 33) - 1));
                 }
                 break;
             }
-            unsigned long long result = (unsigned long long) other.digits[i]
-                                        + (unsigned long long) digits[i]
-                                        + propagate;
+            uint64_t result = (uint64_t) other.digits[i]
+                              + (uint64_t) digits[i]
+                              + propagate;
             propagate = (result >> 32);
-            digits[i] = (unsigned int) (result & ((1LL << 33) - 1));
+            digits[i] = (uint32_t)(result & ((1LL << 33) - 1));
         }
-        digits.push_back((unsigned int) propagate);
+        digits.push_back((uint32_t) propagate);
         cutBadZero();
+    } else if (other.sign == -1) {
+        big_integer m(other);
+        m.sign = 1;
+        *this = n - m;
     } else {
-        if (other.sign == -1) {
-            big_integer m(other);
-            m.sign = 1;
-            *this = n - m;
-        } else {
-            big_integer m(*this);
-            m.sign = 1;
-            *this = other - m;
-        }
+        big_integer m(*this);
+        m.sign = 1;
+        *this = other - m;
     }
     return *this;
 }
@@ -82,10 +87,10 @@ big_integer &big_integer::operator-=(const big_integer &other) {
                                    + (long long) propagate;
                 if (result < 0) {
                     result += ((1LL << 33));
-                    digits[i] = static_cast<unsigned int>(result);
+                    digits[i] = static_cast<uint32_t>(result);
                     propagate = -1;
                 } else {
-                    digits[i] = static_cast<unsigned int>(result);
+                    digits[i] = static_cast<uint32_t>(result);
                     propagate = 0;
                 }
             }
@@ -98,17 +103,16 @@ big_integer &big_integer::operator-=(const big_integer &other) {
             m.sign = this->sign * (-1);
             *this = m;
         }
+    } else if (other.sign == -1) {
+        big_integer m(other);
+        m.sign = 1;
+        *this = n + m;
     } else {
-        if (other.sign == -1) {
-            big_integer m(other);
-            m.sign = 1;
-            *this = n + m;
-        } else {
-            big_integer m(other);
-            m.sign = -1;
-            *this = n + m;
-        }
+        big_integer m(other);
+        m.sign = -1;
+        *this = n + m;
     }
+
     return *this;
 }
 
@@ -126,43 +130,53 @@ void big_integer::cutBadZero() {
     }
 }
 
-unsigned int big_integer::div_long_short(unsigned int number) {
-    unsigned long long propagate = 0;
-    for (int i = static_cast<int>(digits.size()) - 1; i >= 0; i--) {
-        unsigned long long temp = (digits[i] + (propagate << 32));
-        digits[i] = temp / number;
+uint32_t big_integer::div_long_short(uint32_t number) {
+    uint64_t propagate = 0;
+    for (size_t i = (digits.size()); i > 0; i--) {
+        uint64_t temp = (digits[i - 1] + (propagate << 32));
+        digits[i - 1] = (uint32_t)(temp / number);
         propagate = temp % number;
     }
     cutBadZero();
-    return (int) propagate;
+    return (uint32_t) propagate;
 }
 
-void big_integer::mul_long_short(unsigned int number) {
-    unsigned long long propagate = 0;
-    for (unsigned int &digit : digits) {
-        unsigned long long result = (unsigned long long) digit * (unsigned long long) number + propagate;
-        digit = (unsigned int) (result & ((1LL << 33) - 1));
-        propagate = (result >> 32);
+void big_integer::mul_long_short(uint32_t number) {
+    uint32_t propagate = 0;
+    for (uint32_t &digit : digits) {
+        uint64_t result = (uint64_t) digit * (uint64_t) number + propagate;
+        digit = (uint32_t)(result);
+        propagate = (uint32_t)(result >> 32);
     }
     if (propagate) {
-        digits.push_back((unsigned int) propagate);
+        digits.push_back(propagate);
     }
 }
 
-void big_integer::add_long_short(unsigned int number) {
-    unsigned long long propagate = number;
-    for (unsigned int &digit : digits) {
-        //std::cout << digit << std::endl;
-        unsigned long long result = (unsigned long long) digit + propagate;
-        digit = (unsigned int) (result & ((1LL << 33) - 1));
-        propagate = (result >> 32);
+void big_integer::mul_long_short1(big_integer const &first, uint const &second, big_integer &res) {
+    res.digits.clear();
+    uint c_digit = 0;
+    res.digits.resize(first.digits.size() + 1);
+    for (size_t i = 0; i < first.digits.size(); ++i) {
+        uint64_t cur = c_digit + first.digits[i] * 1ULL * second;
+        res.digits[i] = (uint32_t) cur;
+        c_digit = (uint32_t)(cur >> 32);
+    }
+    res.digits[first.digits.size()] = c_digit;
+}
+
+void big_integer::add_long_short(uint32_t number) {
+    uint32_t propagate = number;
+    for (uint32_t &digit : digits) {
+        uint64_t result = (uint64_t) digit + propagate;
+        digit = (uint32_t)(result);
+        propagate = (uint32_t)(result >> 32);
         if (propagate == 0) {
             break;
         }
-        //std::cout << result  << " " << digit << " " << propagate << std::endl;
     }
     if (propagate) {
-        digits.push_back((unsigned int) propagate);
+        digits.push_back((uint32_t) propagate);
     }
 }
 
@@ -172,15 +186,15 @@ std::string toString(unsigned long number) {
         return "0";
     }
     while (number > 0) {
-        str += ((number % 10) + '0');
+        str += ((char16_t) (number % 10) + '0');
         number /= 10;
     }
     //reverse(str.begin(),str.end());
     return str;
 }
 
-unsigned int toInteger(char ch) {
-    return (unsigned int) (ch - '0');
+uint32_t toInteger(char ch) {
+    return (uint32_t)(ch - '0');
 }
 
 std::string big_integer::to_string() {
@@ -191,7 +205,7 @@ std::string big_integer::to_string() {
         std::string outStr;
 
         while (!(BI.digits.size() == 1 && BI.digits[0] == 0)) {
-            unsigned int out = BI.div_long_short(10);
+            uint32_t out = BI.div_long_short(10);
             outStr += toString(out);
         }
         outStr += (BI.sign == 1 ? "" : "-");
@@ -221,7 +235,7 @@ big_integer::big_integer(std::string const &number) {
     } else {
         sign = 1;
     }
-    for (int i = start; i < number.size(); i++) {
+    for (size_t i = start; i < number.size(); i++) {
         mul_long_short(10);
         add_long_short(toInteger(number[i]));
     }
@@ -229,76 +243,56 @@ big_integer::big_integer(std::string const &number) {
 }
 
 bool big_integer::compare_without_sign(const big_integer &Big) {
-    if (digits.size() > Big.digits.size()) {
+    if (digits.size() > Big.digits.size())
         return true;
-    } else if (digits.size() == Big.digits.size()) {
-        for (int i = (int) digits.size() - 1; i >= 0; i--) {
-            if (digits[i] > Big.digits[i]) {
+    if (digits.size() == Big.digits.size()) {
+        for (size_t i = digits.size(); i > 0; --i) {
+            int32_t diff = digits[i - 1] - Big.digits[i - 1];
+            if (diff > 0) {
                 return true;
-            } else if (digits[i] < Big.digits[i]) {
+            }
+            if (diff < 0) {
                 return false;
             }
         }
         return false;
-    } else {
-        return false;
     }
+    return false;
 }
 
 bool big_integer::compare_without_sign_and_equals(const big_integer &other) {
-    if (digits.size() > other.digits.size()) {
+    if (digits.size() > other.digits.size())
         return true;
-    } else if (digits.size() == other.digits.size()) {
-        for (int i = (int) digits.size() - 1; i >= 0; i--) {
-            if (digits[i] < other.digits[i]) {
-                return false;
-            } else if (digits[i] > other.digits[i]) {
+    if (digits.size() == other.digits.size()) {
+        for (size_t i = digits.size(); i > 0; --i) {
+            int32_t diff = digits[i - 1] - other.digits[i - 1];
+            if (diff > 0) {
                 return true;
+            }
+            if (diff < 0) {
+                return false;
             }
         }
         return true;
-    } else {
-        return false;
     }
-}
-
-bool operator>(big_integer const &a, big_integer const &other) {
-    big_integer BI(a);
-    BI.cutBadZero();
-    big_integer Big(other);
-    Big.cutBadZero();
-
-    if (BI.sign == Big.sign) {
-        bool res = BI.compare_without_sign(other);
-        if (BI.sign == 1) {
-            return res;
-        } else {
-            return !res;
-        }
-    } else {
-        if (BI.digits.size() == other.digits.size() && other.digits.size() == 1
-            && BI.digits[0] == 0 && other.digits[0] == 0) {
-            return false;
-        }
-        return BI.sign > Big.sign;
-    }
+    return false;
 }
 
 big_integer operator*(big_integer a, big_integer const &other) {
     big_integer bigInt(0);
     bigInt.sign = a.sign * other.sign;
-    unsigned long long result;
-    unsigned int pointer = 0;
-    unsigned int pointer_copy = pointer;
-    for (unsigned int digit : a.digits) {
-        unsigned long long propagate = 0;
-        for (unsigned int digit1 : other.digits) {
+    uint64_t result;
+    uint32_t pointer = 0;
+    uint32_t pointer_copy = pointer;
+    for (uint32_t digit : a.digits) {
+        uint64_t propagate = 0;
+        for (uint32_t digit1 : other.digits) {
             if (bigInt.digits.size() <= pointer) {
                 bigInt.digits.push_back(0);
             }
-            result = (unsigned long long) digit * (unsigned long long) digit1 + propagate +
-                     (unsigned long long) bigInt.digits[pointer];
-            bigInt.digits[pointer] = static_cast<unsigned int>(result & ((1LL << 33) - 1));
+            result = (uint64_t) digit * (uint64_t) digit1 + propagate +
+                     (uint64_t) bigInt.digits[pointer];
+            bigInt.digits[pointer] = static_cast<uint32_t>(result & ((1LL << 33) - 1));
             propagate = result >> 32;
             pointer++;
         }
@@ -317,51 +311,53 @@ big_integer &big_integer::operator*=(const big_integer &other) {
     return *this;
 }
 
-bool operator==(big_integer const &a, big_integer const &other) {
-    if (a.sign != other.sign) {
-        return a.digits.size() == other.digits.size() && other.digits.size() == 1
-               && a.digits[0] == 0 && other.digits[0] == 0;
-    }
-    if (a.digits.size() != other.digits.size()) {
-        return false;
-    } else {
-        for (int i = (int) a.digits.size() - 1; i >= 0; i--) {
-            if (a.digits[i] != other.digits[i]) {
-                return false;
+short big_integer::compare(const big_integer &other) const {
+    if (digits.size() > other.digits.size()) {
+        return 1;
+    } else if (digits.size() == other.digits.size()) {
+        for (size_t i = digits.size(); i > 0; --i) {
+            if (digits[i - 1] == other.digits[i - 1]) {
+                continue;
+            }
+            if (digits[i - 1] < other.digits[i - 1]) {
+                return -1;
+            } else {
+                return 1;
             }
         }
-        return true;
-    }
-}
 
-bool operator>=(big_integer const &a, big_integer const &other) {
-    big_integer BI(a);
-    if (BI.sign == other.sign) {
-        bool res = BI.compare_without_sign_and_equals(other);
-        if (BI.sign == 1) {
-            return res;
-        } else {
-            return !res;
-        }
+        return 0;
     } else {
-        if (BI.digits.size() == other.digits.size() && other.digits.size() == 1
-            && BI.digits[0] == 0 && other.digits[0] == 0) {
-            return true;
-        } else {
-            return BI.sign > other.sign;
-        }
+        return 0;
     }
 }
 
-bool operator<=(big_integer const &a, big_integer const &other) {
-    return !(a > other);
+bool operator>(const big_integer &a, const big_integer &other) {
+    big_integer temp(other);
+    return (a.compare(temp) == 1);
 }
 
-bool operator!=(big_integer const &a, big_integer const &other) {
-    return !(a == other);
+bool operator==(const big_integer &a, const big_integer &other) {
+    big_integer temp(other);
+    return (a.compare(temp) == 0);
 }
 
-bool operator<(big_integer const &a, big_integer const &other) {
+bool operator>=(const big_integer &a, const big_integer &other) {
+    big_integer temp(other);
+    return (a.compare(temp) >= 0);
+}
+
+bool operator<=(const big_integer &a, const big_integer &other) {
+    big_integer temp(other);
+    return (a.compare(temp) <= 0);
+}
+
+bool operator!=(const big_integer &a, const big_integer &other) {
+    big_integer temp(other);
+    return (a.compare(temp) != 0);
+}
+
+bool operator<(const big_integer &a, const big_integer &other) {
     return !(a >= other);
 }
 
@@ -380,15 +376,15 @@ big_integer &big_integer::operator<<=(short shift) {
             shift1 = shift;
         }
         shift -= shift1;
-        unsigned long long result;
-        unsigned long long propagate = 0;
-        for (unsigned int &digit : digits) {
-            result = (((unsigned long long) (digit)) << shift1);
-            digit = (unsigned int) ((result & ((1LL << 33) - 1)) + propagate);
+        uint64_t result;
+        uint64_t propagate = 0;
+        for (uint32_t &digit : digits) {
+            result = (((uint64_t)(digit)) << shift1);
+            digit = (uint32_t)((result & ((1LL << 33) - 1)) + propagate);
             propagate = (result >> 32);
         }
         if (propagate != 0) {
-            digits.push_back((unsigned int) (propagate));
+            digits.push_back((uint32_t)(propagate));
         }
     }
     return *this;
@@ -409,16 +405,12 @@ big_integer &big_integer::operator>>=(short shift) {
             shift1 = shift;
         }
         shift -= shift1;
-        unsigned long long propagate = 0;
-        unsigned long long result;
+        uint64_t propagate = 0;
+        uint64_t result;
         for (int i = (int) digits.size() - 1; i >= 0; i--) {
-            //std::cout << "hui" << std::endl;
-            unsigned long long prop = digits[i] & ((1 << (shift1)) - 1);
-            //std::cout << prop << std::endl;
-            result = (((unsigned long long) digits[i]) >> shift1);
-            //std::cout << result << std::endl;
-            digits[i] = (unsigned int) ((result & ((1LL << 33) - 1)) + (propagate << (32 - shift1)));
-            //std::cout << digits[i] << std::endl;
+            uint64_t prop = digits[i] & ((1 << (shift1)) - 1);
+            result = (((uint64_t) digits[i]) >> shift1);
+            digits[i] = (uint32_t)((result & ((1LL << 33) - 1)) + (propagate << (32 - shift1)));
             propagate = prop;
         }
     }
@@ -426,159 +418,100 @@ big_integer &big_integer::operator>>=(short shift) {
     return *this;
 }
 
-//big_integer operator/(big_integer Dividend, big_integer const &other) {
-//    int sign = Dividend.sign;
-//    big_integer Divider(other);
-//    Divider.sign = 1;
-//    Dividend.sign = 1;
-//    int64_t bitNumber = (Dividend.digits.size()) * 32 - 1;
-//    big_integer Number(0);
-//    uint64_t numLen = 0;
-//    uint64_t dividerLen = (Divider.digits.size() - 1) * 32;
-//    uint64_t i = 0;
-//    while ((Divider.digits[Divider.digits.size() - 1] >> i) != 0) {
-//        //int h = Divider.digits[Divider.digits.size() - 1] >> i;
-//        //std::cout << h << std::endl;
-//        i++;
-//    }
-//
-//    dividerLen += i;
-//    std::cout << dividerLen << std::endl;
-//    big_integer answer(0);
-//    int shift;
-//    while (true) {
-//        shift = 0;
-//        if ((bitNumber - (dividerLen - numLen)) >= 0) {
-//            Number <<= (dividerLen - numLen);
-//            uint64_t uk2 = dividerLen - numLen;
-//            uint64_t end1 = (bitNumber - (dividerLen - numLen));
-//            uint64_t end2 = 0;
-//            while (uk2 != 0) {
-//                uint64_t razdel1 = ((bitNumber >> 5) << 5);
-//                uint64_t razdel2 = ((uk2 >> 5) << 5);
-//                uint64_t shiftLen = std::min(bitNumber - std::max(razdel1, end1) - 1,
-//                                             uk2 - std::max(razdel2, end2) - 1);
-//
-//            }
-//        }
-//        while (numLen < dividerLen && bitNumber >= 0) {
-//            //bit = static_cast<uint8_t> ((Dividend.digits[bitNumber >> 5] >> (bitNumber & ((1 << 6) - 1))) & 1);
-//            Number <<= 1;
-//            Number.add_long_short(bit);
-//            ++shift;
-//            --bitNumber;
-//        }
-//        answer <<= shift;
-//        if (Number >= Divider) {
-//            Number -= Divider;
-//            Number.cutBadZero();
-//            answer.add_long_short(1);
-//        }
-//        if (bitNumber < 0) {
-//            answer.sign = sign * other.sign;
-//            return answer;
-//        }
-//    }
-//}
+bool compare_equal_vector(const big_integer &a, const big_integer &b) {
+    for (size_t i = a.digits.size(); i > 0; i--) {
+        if (a.digits[i - 1] != b.digits[i - 1]) {
+            return a.digits[i - 1] < b.digits[i - 1];
+        }
+    }
+    return false;
+}
 
-big_integer operator/(big_integer Dividend, big_integer const &other) {
-    int sign = Dividend.sign;
-    big_integer Divider(other);
-    Divider.sign = 1;
-    Dividend.sign = 1;
-    int64_t bitNumber = (Dividend.digits.size()) * 32 - 1;
-    big_integer Number(0);
-    uint64_t numLen = 0;
-    uint64_t dividerLen = Divider.digits.size() * 32;
-//    int i = 0;
-//    while ((Divider.digits[Divider.digits.size() - 1] >> i) != 0) {
-//        i++;
-//    }
-//    dividerLen+=i;
-    uint8_t bit;
-    big_integer answer(0);
-    int shift;
-    while (true) {
-        shift = 0;
-        while (Number < Divider && bitNumber >= 0) {
-            bit = static_cast<uint8_t> ((Dividend.digits[bitNumber >> 5] >> (bitNumber & ((1 << 6) - 1))) & 1);
-            Number <<= 1;
-            Number.add_long_short(bit);
-            ++shift;
-            --bitNumber;
-        }
-        answer <<= shift;
-        if (Number >= Divider) {
-            Number -= Divider;
-            Number.cutBadZero();
-            answer.add_long_short(1);
-        }
-        if (bitNumber < 0) {
-            answer.sign = sign * other.sign;
-            return answer;
+void big_integer::sub_equal(big_integer &a, const big_integer &b) {
+    uint64_t carry = 0;
+    for (size_t i = 0; i < b.digits.size() || carry; ++i) {
+        uint64_t tmp = (uint64_t) carry + (i < b.digits.size() ? b.digits[i] : 0);
+        if (a.digits[i] < tmp) {
+            a.digits[i] = (uint64_t) MAX_UINT32_IN_UINT64 - tmp + a.digits[i];
+            carry = 1;
+        } else {
+            carry = 0;
+            a.digits[i] -= tmp;
         }
     }
 }
 
-//big_integer operator/(big_integer Dividend, big_integer const &other) {
-//    big_integer Result(0);
-//    for (size_t i = 1; i < Dividend.digits.size(); i++) {
-//        Result.digits.push_back(0);
-//    }
-//    int sign = Dividend.sign;
-//    Dividend.sign = 1;
-//    big_integer Divider(other);
-//    Divider.sign = 1;
-//    unsigned int divLen = 0;
-//    while (Dividend >= Divider) {
-//        Divider <<= 16;
-//        divLen += 16;
-//    }
-//    while (true) {
-//        while (Dividend < Divider && divLen > 0) {
-//            Divider >>= 1;
-//            --divLen;
-//        }
-//        if (divLen == 0) {
-//            if (Dividend >= Divider) {
-//                Dividend -= (Divider);
-//                Result.digits[divLen >> 5] += (1 << (divLen & ((1 << 6) - 1)));
-//            }
-//            Result.sign = sign * other.sign;
-//            Result.cutBadZero();
-//            return Result;
-//        } else {
-//            Dividend -= (Divider);
-//            Result.digits[divLen >> 5] += (1 << (divLen & ((1 << 6) - 1)));
-//        }
-//    }
-//}
+void big_integer::divide(big_integer &res, big_integer const &a, big_integer const &b) {
+    int cursign = a.compare(b);
+    res.digits.clear();
+
+    if (cursign < 0) {
+        res.digits.push_back(0);
+        return;
+    }
+    if (cursign == 0) {
+        res.digits.push_back(1);
+        return;
+    }
+    if (b.digits.size() == 1) {
+        res = a;
+        res.div_long_short(b.digits[0]);
+        return;
+    }
+
+    uint32_t d = (uint32_t)(MAX_UINT32_IN_UINT64 / (b.digits[b.digits.size() - 1] + 1));
+    big_integer u(a), v(b);
+    u.mul_long_short(d);
+    v.mul_long_short(d);
+    u.cutBadZero();
+    v.cutBadZero();
+    size_t n = u.digits.size(), m = v.digits.size(), len = n - m + 1;
+    res.digits.resize(len);
+    big_integer dividend(m + 1, true), divider(m + 1, true);
+
+    for (size_t i = 0; i < m; i++) {
+        dividend.digits[i] = u.digits[n + i - m];
+    }
+
+    dividend.digits[m] = n < u.digits.size() ? u.digits[n] : 0;
+    for (size_t i = 0; i < len; i++) {
+        dividend.digits[0] = u.digits[n - m - i];
+        size_t cur_pos = len - 1 - i;
+
+        uint32_t tmp = (uint32_t) std::min(
+                (uint64_t)((uint64_t)(m < dividend.digits.size() ? dividend.digits[m] : 0) * MAX_UINT32_IN_UINT64 +
+                           (m - 1 < dividend.digits.size() ? dividend.digits[m - 1] : 0)) / v.digits.back(),
+                MAX_UINT32_IN_UINT64 - 1);
+
+        mul_long_short1(v, tmp, divider);
+
+        while (compare_equal_vector(dividend, divider)) {
+            mul_long_short1(v, --tmp, divider);
+        }
+        sub_equal(dividend, divider);
+        for (size_t j = m; j > 0; j--) {
+            dividend.digits[j] = dividend.digits[j - 1];
+        }
+        res.digits[cur_pos] = tmp;
+    }
+    res.cutBadZero();
+}
+
+big_integer operator/(big_integer Dividend, big_integer const &other) {
+    if (other.digits.size() == 1) {
+        Dividend.div_long_short(other.digits[0]);
+        Dividend.sign *= other.sign;
+        return Dividend;
+    }
+    big_integer ans;
+    ans.divide(ans, Dividend, other);
+    return ans;
+}
 
 big_integer operator%(big_integer Dividend, big_integer const &other) {
-    int sign = Dividend.sign;
-    Dividend.sign = 1;
-    big_integer Divider(other);
-    Divider.sign = 1;
-    unsigned int divLen = 0;
-    while (Dividend >= Divider) {
-        Divider <<= 1;
-        ++divLen;
-    }
-    while (true) {
-        while (Dividend < Divider && divLen > 0) {
-            Divider >>= 1;
-            --divLen;
-        }
-        if (divLen == 0) {
-            if (Dividend >= Divider) {
-                Dividend -= (Divider);
-            }
-            Dividend.sign = sign;
-            return Dividend;
-        } else {
-            Dividend -= (Divider);
-        }
-    }
+    big_integer tmp(Dividend);
+    Dividend = tmp - (tmp / other) * other;
+    return Dividend;
 }
 
 big_integer &big_integer::operator/=(big_integer const &other) {
@@ -659,7 +592,7 @@ big_integer operator^(big_integer a, big_integer const &b) {
 
 big_integer &big_integer::operator&=(big_integer const &rhs) {
     uint32_t min = (uint32_t) std::min(digits.size(), rhs.digits.size());
-    for (unsigned int i = 0; i < min; i++) {
+    for (uint32_t i = 0; i < min; i++) {
         digits[i] &= rhs.digits[i];
     }
     uint32_t size = (uint32_t) digits.size() - min;
@@ -672,7 +605,7 @@ big_integer &big_integer::operator&=(big_integer const &rhs) {
 
 big_integer &big_integer::operator|=(big_integer const &rhs) {
     uint32_t max = (uint32_t) std::max(digits.size(), rhs.digits.size());
-    for (unsigned int i = 0; i < max; i++) {
+    for (uint32_t i = 0; i < max; i++) {
         if (digits.size() <= i) {
             digits.push_back(0);
         }
@@ -684,7 +617,7 @@ big_integer &big_integer::operator|=(big_integer const &rhs) {
 
 big_integer &big_integer::operator^=(big_integer const &rhs) {
     uint32_t max = (uint32_t) std::max(digits.size(), rhs.digits.size());
-    for (unsigned int i = 0; i < max; i++) {
+    for (uint32_t i = 0; i < max; i++) {
         if (digits.size() <= i) {
             digits.push_back(0);
         }
@@ -703,7 +636,7 @@ big_integer big_integer::operator+() const {
 }
 
 big_integer big_integer::reverseIt() {
-    for (unsigned int &digit : digits) {
+    for (uint32_t &digit : digits) {
         digit = ~digit;
     }
     return *this;
@@ -731,7 +664,7 @@ std::string to_string(big_integer const &a) {
         std::string outStr;
 
         while (!(BI.digits.size() == 1 && BI.digits[0] == 0)) {
-            unsigned int out = BI.div_long_short(10);
+            uint32_t out = BI.div_long_short(10);
             outStr += toString(out);
         }
         outStr += (BI.sign == 1 ? "" : "-");
@@ -765,4 +698,3 @@ big_integer &big_integer::operator=(big_integer const &other) {
     digits = other.digits;
     return *this;
 }
-
