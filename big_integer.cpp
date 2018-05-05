@@ -251,15 +251,15 @@ bool big_integer::compare_without_sign_and_equals(const big_integer &other) {
 }
 
 big_integer operator*(big_integer const &a, big_integer const &other) {
-    big_integer bigInt(0);
-    bigInt.sign = a.sign * other.sign;
-
     if (other.digits.size() == 1) {
-        bigInt = a;
+        big_integer bigInt(a);
         bigInt.mul_long_short(other.digits[0]);
         bigInt.sign *= other.sign;
         return bigInt;
     }
+
+    big_integer bigInt(0);
+    bigInt.sign = a.sign * other.sign;
 
     uint64_t result;
     uint32_t pointer = 0;
@@ -411,7 +411,9 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
         res.div_long_short(b.digits[0]);
         return;
     }
-    int neg = a.compare(b);
+
+    short neg = a.compare(b);
+
     res.digits.clear();
 
     if (neg < 0) {
@@ -442,7 +444,7 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
         size_t cur_pos = len - 1 - i;
 
         uint32_t tmp = (uint32_t) std::min(
-                (uint64_t) ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] : 0) * MAX_UINT32_IN_UINT64 +
+                ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] : 0) * MAX_UINT32_IN_UINT64 +
                             (m - 1 < dividend.digits.size() ? dividend.digits[m - 1] : 0)) / v.digits.back(),
                 MAX_UINT32_IN_UINT64 - 1);
 
