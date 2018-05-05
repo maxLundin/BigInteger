@@ -11,7 +11,7 @@ big_integer::big_integer(int x) {
     uint32_t num;
     if (x < 0) {
         sign = -1;
-        num = (uint32_t) (-x);
+        num = (uint32_t) (-(int64_t) x);
     } else {
         num = (uint32_t) x;
         sign = 1;
@@ -33,6 +33,21 @@ big_integer::big_integer(big_integer &&other) noexcept {
     sign = other.sign;
     for (uint32_t digit: other.digits) {
         digits.push_back(digit);
+    }
+}
+
+void big_integer::sub_equal(big_integer &a, const big_integer &b) {
+    uint64_t carry = 0;
+    size_t i = 0;
+    for (; i < b.digits.size(); ++i) {
+        uint64_t tmp = (uint64_t) carry + b.digits[i];
+        carry = (uint64_t) (a.digits[i] < tmp);
+        a.digits[i] -= tmp;
+    }
+
+    for (; carry; ++i) {
+        carry = a.digits[i] - 1;
+        a.digits[i] -= 1;
     }
 }
 
@@ -73,17 +88,12 @@ big_integer &big_integer::operator-=(const big_integer &other) {
     if (sign == other.sign) {
         if (n.compare_without_sign_and_equals(other)) {
             uint32_t propagate = 0;
-            for (size_t i = 0; i < other.digits.size(); i++) {
-                int64_t result = (int64_t) digits[i] - (int64_t) other.digits[i]
-                                 - (int64_t) propagate;
-                if (result < 0) {
-                    result += (MAX_UINT32_IN_UINT64);
-                    digits[i] = (uint32_t) (result);
-                    propagate = 1;
-                } else {
-                    digits[i] = (uint32_t) (result);
-                    propagate = 0;
-                }
+            size_t i = 0;
+            for (; i < other.digits.size(); ++i) {
+                uint64_t result = (uint64_t) other.digits[i]
+                                  + (uint64_t) propagate;
+                propagate = (uint32_t) (digits[i] < result);
+                digits[i] -= result;
             }
             if (propagate) {
                 digits[other.digits.size()] -= propagate;
@@ -103,7 +113,6 @@ big_integer &big_integer::operator-=(const big_integer &other) {
         *this = n + m;
     }
     cutBadZero();
-
     return *this;
 }
 
@@ -165,7 +174,7 @@ std::string toString(uint64_t number) {
         return "0";
     }
     while (number > 0) {
-        str += std::to_string((number % 10) + (uint32_t) '0');
+        str += (number % 10) + '0';
         number /= 10;
     }
     return str;
@@ -384,21 +393,6 @@ big_integer &big_integer::operator>>=(short shift) {
     }
     cutBadZero();
     return *this;
-}
-
-void big_integer::sub_equal(big_integer &a, const big_integer &b) {
-    uint64_t carry = 0;
-    size_t i = 0;
-    for (; i < b.digits.size(); ++i) {
-        uint64_t tmp = (uint64_t) carry + b.digits[i];
-        carry = (uint64_t) (a.digits[i] < tmp);
-        a.digits[i] -= tmp;
-    }
-
-    for (; carry; ++i) {
-        carry = a.digits[i] - 1;
-        a.digits[i] -= 1;
-    }
 }
 
 void big_integer::divide(big_integer &res, big_integer const &a, big_integer const &b) {
