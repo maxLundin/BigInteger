@@ -73,8 +73,7 @@ big_integer &big_integer::operator-=(const big_integer &other) {
     if (sign == other.sign) {
         if (n.compare_without_sign_and_equals(other)) {
             uint32_t propagate = 0;
-            size_t i = 0
-            for (; i < other.digits.size(); i++) {
+            for (size_t i = 0; i < other.digits.size(); i++) {
                 int64_t result = (int64_t) digits[i] - (int64_t) other.digits[i]
                                  - (int64_t) propagate;
                 if (result < 0) {
