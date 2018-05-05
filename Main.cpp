@@ -1,13 +1,12 @@
-
-#include "BigInteger.cpp"
+#include "big_integer.h"
 #include <iostream>
 
 int main()
 {
-        BigInteger a, b;
-	std::cin >> a >> b;
-	//std::cout << a << std::endl;
-    	BigInteger c = a * b;
-	std::cout << c << std::endl;	
+	big_integer a = 2147483647;
+	big_integer b = -2147483648;
+	std::cout << a << b;
+    big_integer c =  a + b;
+	std::cout << c;
 	return 0;
 }

@@ -19,8 +19,6 @@ struct big_integer {
 
     friend std::string to_string(big_integer const &a);
 
-    bool compare_without_sign(const big_integer &);
-
     bool compare_without_sign_and_equals(const big_integer &);
 
     unsigned int div_long_short(unsigned int number);
@@ -45,7 +43,7 @@ struct big_integer {
 
     ~big_integer() = default;
 
-    big_integer(big_integer &&);
+    big_integer(big_integer &&) noexcept ;
 
     std::vector<unsigned int> digits;
 
@@ -97,8 +95,6 @@ struct big_integer {
     short compare(const big_integer &other) const;
 
     void divide(big_integer &res, const big_integer &a, const big_integer &b);
-
-    void mul_long_short1(const big_integer &first, const uint &second, big_integer &res);
 
     void sub_equal(big_integer &a, const big_integer &b);
 };
