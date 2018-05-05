@@ -438,7 +438,6 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
                  (m - 1 < dividend.digits.size() ? dividend.digits[m - 1] : 0)) / v.digits.back(),
                 MAX_UINT32_IN_UINT64 - 1);
 
-
         divider = v;
         divider.mul_long_short(tmp);
 
