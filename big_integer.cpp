@@ -11,7 +11,7 @@ big_integer::big_integer(int x) {
     uint32_t num;
     if (x < 0) {
         sign = -1;
-        num = (uint32_t) (-(int64_t) x);
+        num = (uint32_t) (-x);
     } else {
         num = (uint32_t) x;
         sign = 1;
@@ -225,8 +225,13 @@ big_integer::big_integer(std::string const &number) {
     cutBadZero();
 }
 
+void swap(big_integer &a, big_integer &b) {
+    using std::swap;
+    swap(a.sign, b.sign);
+    swap(a.digits, b.digits);
+}
+
 bool big_integer::compare_without_sign_and_equals(const big_integer &other) {
-    big_integer b(other);
     if (digits.size() > other.digits.size()) {
         return true;
     }
@@ -245,14 +250,15 @@ bool big_integer::compare_without_sign_and_equals(const big_integer &other) {
     return false;
 }
 
-big_integer operator*(big_integer a, big_integer const &other) {
+big_integer operator*(big_integer const &a, big_integer const &other) {
     big_integer bigInt(0);
     bigInt.sign = a.sign * other.sign;
 
     if (other.digits.size() == 1) {
-        a.mul_long_short(other.digits[0]);
-        a.sign *= other.sign;
-        return a;
+        bigInt = a;
+        bigInt.mul_long_short(other.digits[0]);
+        bigInt.sign *= other.sign;
+        return bigInt;
     }
 
     uint64_t result;
@@ -279,7 +285,8 @@ big_integer operator*(big_integer a, big_integer const &other) {
 }
 
 big_integer &big_integer::operator*=(const big_integer &other) {
-    *this = *this * other;
+    big_integer result = (*this * other);
+    swap(result, *this);
     return *this;
 }
 
@@ -404,7 +411,6 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
         res.div_long_short(b.digits[0]);
         return;
     }
-
     int neg = a.compare(b);
     res.digits.clear();
 
@@ -457,11 +463,12 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
     res.cutBadZero();
 }
 
-big_integer operator/(big_integer Dividend, big_integer const &other) {
+big_integer operator/(big_integer const &Dividend, big_integer const &other) {
     if (other.digits.size() == 1) {
-        Dividend.div_long_short(other.digits[0]);
-        Dividend.sign *= other.sign;
-        return Dividend;
+        big_integer temp(Dividend);
+        temp.div_long_short(other.digits[0]);
+        temp.sign *= other.sign;
+        return temp;
     }
     big_integer ans;
     ans.divide(ans, Dividend, other);
@@ -470,18 +477,19 @@ big_integer operator/(big_integer Dividend, big_integer const &other) {
 }
 
 big_integer operator%(big_integer Dividend, big_integer const &other) {
-    big_integer tmp(Dividend);
-    Dividend = tmp - (tmp / other) * other;
+    Dividend = Dividend - (Dividend / other) * other;
     return Dividend;
 }
 
 big_integer &big_integer::operator/=(big_integer const &other) {
-    *this = *this / other;
+    big_integer result = (*this / other);
+    swap(result, *this);
     return *this;
 }
 
-big_integer &big_integer::operator%=(big_integer const &rhs) {
-    *this = *this % rhs;
+big_integer &big_integer::operator%=(big_integer const &other) {
+    big_integer result = (*this % other);
+    swap(result, *this);
     return *this;
 }
 

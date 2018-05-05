@@ -29,8 +29,6 @@ struct big_integer {
 
     big_integer reverseIt();
 
-    int sign;
-
     big_integer();
 
     big_integer(big_integer const &other);
@@ -43,9 +41,7 @@ struct big_integer {
 
     ~big_integer() = default;
 
-    big_integer(big_integer &&) noexcept ;
-
-    std::vector<unsigned int> digits;
+    big_integer(big_integer &&) noexcept;
 
     big_integer &operator/=(big_integer const &rhs);
 
@@ -85,7 +81,6 @@ struct big_integer {
 
     big_integer operator~();
 
-
     big_integer &operator++();
 
     big_integer &operator--();
@@ -97,15 +92,19 @@ struct big_integer {
     void divide(big_integer &res, const big_integer &a, const big_integer &b);
 
     void sub_equal(big_integer &a, const big_integer &b);
+
+    std::vector<unsigned int> digits;
+    int sign;
+
 };
 
 big_integer operator+(big_integer a, big_integer const &b);
 
 big_integer operator-(big_integer a, big_integer const &b);
 
-big_integer operator*(big_integer a, big_integer const &b);
+big_integer operator*(big_integer const &a, big_integer const &b);
 
-big_integer operator/(big_integer a, big_integer const &b);
+big_integer operator/(big_integer const &a, big_integer const &b);
 
 big_integer operator%(big_integer a, big_integer const &b);
 
