@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include "OptimizedArrayList.h"
 #include <string>
 #include <cstdlib>
 #include <algorithm>
@@ -9,19 +10,21 @@
 
 struct big_integer {
 
-    friend std::ostream &operator<<(std::ostream &, big_integer &);
+    friend std::ostream &operator<<(std::ostream &, big_integer const&);
 
     friend std::istream &operator>>(std::istream &, big_integer &);
 
     void cutBadZero();
 
-    std::string to_string();
+    std::string to_string() const;
 
     friend std::string to_string(big_integer const &a);
 
     bool compare_without_sign_and_equals(const big_integer &);
 
     unsigned int div_long_short(unsigned int number);
+
+    unsigned int div_long_by_10();
 
     void mul_long_short(unsigned int number);
 
@@ -94,6 +97,7 @@ struct big_integer {
     void sub_equal(big_integer &a, const big_integer &b);
 
     std::vector<unsigned int> digits;
+//    OptimizedArrayList digits;
     int sign;
 
 };

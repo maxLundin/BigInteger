@@ -14,30 +14,32 @@ using std::shared_ptr;
 using std::vector;
 
 class OptimizedArrayList {
-private:
-    static const size_t SMALL_SIZE = 1;
 
-    struct data {
-        uint32_t small[SMALL_SIZE];
+    union data {
+        uint32_t small;
         shared_ptr<vector<uint32_t>> big;
 
-        data() : big(nullptr) {};
+        data() {};
 
-        ~data() { big = nullptr; };
+        ~data() {};
     };
 
     data data;
-    size_t __size;
+    size_t _size;
     bool isSmall;
 
+public:
     void make_big();
 
-public:
     OptimizedArrayList();
 
-    OptimizedArrayList(OptimizedArrayList const &other) noexcept;
+    ~OptimizedArrayList();
 
-    OptimizedArrayList &operator=(OptimizedArrayList const &other) noexcept;
+    void make_unique();
+
+    OptimizedArrayList &operator=(OptimizedArrayList const &other);
+
+    OptimizedArrayList(OptimizedArrayList const &other);
 
     size_t size() const;
 
