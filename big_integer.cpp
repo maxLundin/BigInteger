@@ -30,11 +30,13 @@ big_integer::big_integer(const big_integer &other)
 }
 
 big_integer::big_integer(big_integer &&other) noexcept {
-    digits.clear();
-    sign = other.sign;
-    for (size_t i = 0; i < other.digits.size(); i++) {
-        digits.push_back(other.digits[i]);
-    }
+//    digits.clear();
+//    sign = other.sign;
+//    for (size_t i = 0; i < other.digits.size(); i++) {
+//        digits.push_back(other.digits[i]);
+//    }
+    std::swap(sign, other.sign);
+    std::swap(digits, other.digits);
 }
 
 void big_integer::sub_equal(big_integer &a, const big_integer &b) {

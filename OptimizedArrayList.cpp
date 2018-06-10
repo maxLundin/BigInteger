@@ -38,15 +38,24 @@ OptimizedArrayList::OptimizedArrayList(OptimizedArrayList const &other) {
 
 OptimizedArrayList &OptimizedArrayList::operator=(OptimizedArrayList const &other) {
     _size = other._size;
+
     if (!isSmall) {
         data.big.reset();
     }
-    isSmall = other.isSmall;
     if (other.isSmall) {
+
         data.small = other.data.small;
     } else {
+
+  //      shared_ptr<std::vector<uint32_t> > tmp;
         new(&data.big) std::shared_ptr<vector<uint32_t>>(other.data.big);
+//        swap(tmp, data.big);
+//        if (!isSmall) {
+//            tmp.reset();
+//        }
+
     }
+    isSmall = other.isSmall;
     return *this;
 }
 
@@ -79,6 +88,12 @@ void OptimizedArrayList::pop_back() {
     }
     make_unique();
     (*data.big.get()).pop_back();
+    if (data.big->size() == 1) {
+        uint32_t tmp = data.big->back();
+        data.big.reset();
+        isSmall = true;
+        data.small = tmp;
+    }
 }
 
 uint32_t &OptimizedArrayList::operator[](size_t ind) {
@@ -98,16 +113,13 @@ void OptimizedArrayList::resize(size_t len) {
     _size = len;
     if (!isSmall) data.big.reset();
     isSmall = true;
-    data.small = 0;
 
     make_big();
-    if (isSmall) {
-        data.small = 0;
-    } else {
-        for (size_t i = 0; i < _size; i++) {
-            (*data.big)[i] = 0;
-        }
+
+    for (size_t i = 0; i < _size; i++) {
+        (*data.big)[i] = 0;
     }
+
 }
 
 void OptimizedArrayList::clear() {
