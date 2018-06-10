@@ -28,14 +28,16 @@ class OptimizedArrayList {
     size_t _size;
     bool isSmall;
 
-public:
+
     void make_big();
+
+    void make_unique();
+
+public:
 
     OptimizedArrayList();
 
     ~OptimizedArrayList();
-
-    void make_unique();
 
     OptimizedArrayList &operator=(OptimizedArrayList const &other);
 
@@ -56,6 +58,7 @@ public:
     void resize(size_t len);
 
     void clear();
+
 };
 
 

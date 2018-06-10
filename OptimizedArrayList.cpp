@@ -19,9 +19,9 @@ void OptimizedArrayList::make_big() {
 
     mas = data.small;
 
-    vector<uint32_t> vect(_size);
+    vector<uint32_t> *vect = new vector<uint32_t>(_size);
 
-    new(&data.big) std::shared_ptr<std::vector<uint32_t>>(new std::vector<uint32_t>(vect));
+    new(&data.big) std::shared_ptr<std::vector<uint32_t>>(vect);
 
     (*data.big.get())[0] = mas;
 }
