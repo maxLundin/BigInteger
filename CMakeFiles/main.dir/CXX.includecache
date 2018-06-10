@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/max/Documents/BigInteger/Main1.cpp
+iostream
+-
+big_integer.cpp
+/home/max/Documents/BigInteger/big_integer.cpp
+
+/home/max/Documents/BigInteger/big_integer.cpp
+vector
+-
+big_integer.h
+/home/max/Documents/BigInteger/big_integer.h
+
+/home/max/Documents/BigInteger/big_integer.h
+iostream
+-
+vector
+-
+string
+-
+cstdlib
+-
+algorithm
+-
+iomanip
+-
+

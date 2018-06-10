@@ -1,0 +1,1 @@
+/usr/bin/c++   -Wall -std=c++17 -pedantic  -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG  -rdynamic CMakeFiles/Main.cpp.dir/big_integer.cpp.o CMakeFiles/Main.cpp.dir/gtest/gtest-all.cc.o CMakeFiles/Main.cpp.dir/gtest/gtest_main.cc.o  -o Main.cpp 
