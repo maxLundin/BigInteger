@@ -20,7 +20,7 @@ big_integer::big_integer(int x) {
     digits.push_back(num);
 }
 
-big_integer::big_integer(size_t x, bool flag) {
+big_integer::big_integer(size_t x, bool) {
     sign = 1;
     digits.resize(x);
 }
@@ -30,16 +30,11 @@ big_integer::big_integer(const big_integer &other)
 }
 
 big_integer::big_integer(big_integer &&other) noexcept {
-//    digits.clear();
-//    sign = other.sign;
-//    for (size_t i = 0; i < other.digits.size(); i++) {
-//        digits.push_back(other.digits[i]);
-//    }
     std::swap(sign, other.sign);
     std::swap(digits, other.digits);
 }
 
-void big_integer::sub_equal(big_integer &a, const big_integer &b) {
+inline void big_integer::sub_equal(big_integer &a, const big_integer &b) {
     uint64_t carry = 0;
     size_t i = 0;
     for (; i < b.digits.size(); ++i) {
@@ -131,42 +126,30 @@ big_integer operator+(big_integer a, big_integer const &b) {
     return a += b;
 }
 
-void big_integer::cutBadZero() {
+inline void big_integer::cutBadZero() {
     while (digits.size() > 1 && digits.back() == 0) {
         digits.pop_back();
     }
 }
 
-uint32_t big_integer::div_long_short(uint32_t number) {
+inline uint32_t big_integer::div_long_short(uint32_t number) {
     uint64_t propagate = 0;
-    for (size_t i = (digits.size()); i--;) {
-        uint64_t temp = (digits[i] + (propagate << 32));
-        digits[i] = (uint32_t) (temp / number);
+    for (auto i = digits.rbegin(); i != digits.rend(); ++i){
+        uint64_t temp = (*i + (propagate << 32));
+        *i = (uint32_t) (temp / number);
         propagate = temp % number;
     }
     cutBadZero();
     return (uint32_t) propagate;
 }
 
-uint32_t big_integer::div_long_by_10() {
-    uint64_t propagate = 0;
-    for (size_t i = (digits.size()); i--;) {
-        uint64_t number = (digits[i] + (propagate << 32));
-        digits[i] = (uint32_t) ((429496729ull * (uint64_t) number) >> 32);
-        propagate = (number - (digits[i] * 10));
-    }
-    cutBadZero();
-    return (uint32_t) propagate;
-}
-
-void big_integer::mul_long_short(uint32_t number) {
+inline void big_integer::mul_long_short(uint32_t number) {
     uint32_t propagate = 0;
-//    for (uint32_t &digit : digits) {
-    for (size_t i = 0; i < digits.size(); i++) {
-        //uint32_t &digit = digits[i];
+    for (uint32_t &digit : digits) {
+//    for (size_t i = 0; i < digits.size(); i++) {
 
-        uint64_t result = (uint64_t) digits[i] * (uint64_t) number + propagate;
-        digits[i] = (uint32_t) (result);
+        uint64_t result = (uint64_t) digit * (uint64_t) number + propagate;
+        digit = (uint32_t) (result);
         propagate = (uint32_t) (result >> 32);
     }
     if (propagate) {
@@ -206,7 +189,7 @@ std::string toString(uint64_t number) {
     return str;
 }
 
-uint32_t toInteger(char ch) {
+inline uint32_t toInteger(char ch) {
     return (uint32_t) (ch - '0');
 }
 
@@ -298,13 +281,13 @@ big_integer operator*(big_integer const &a, big_integer const &other) {
     uint32_t pointer = 0;
     uint32_t pointer_copy = pointer;
     bigInt.digits.resize(a.digits.size() + other.digits.size() + 1);
-    //for (uint32_t digit : a.digits) {
-    for (size_t i = 0; i < a.digits.size(); i++) {
-        uint32_t digit = a.digits[i];
+    for (uint32_t digit : a.digits) {
+    //for (size_t i = 0; i < a.digits.size(); i++) {
+        //uint32_t digit = a.digits[i];
         uint64_t propagate = 0;
-        //for (uint32_t digit1 : other.digits) {
-        for (size_t j = 0; j < other.digits.size(); j++) {
-            uint32_t digit1 = other.digits[j];
+        for (uint32_t digit1 : other.digits) {
+        //for (size_t j = 0; j < other.digits.size(); j++) {
+            //uint32_t digit1 = other.digits[j];
             result = (uint64_t) digit * (uint64_t) digit1 + propagate +
                      (uint64_t) bigInt.digits[pointer];
             bigInt.digits[pointer] = (uint32_t) result;
@@ -327,7 +310,7 @@ big_integer &big_integer::operator*=(const big_integer &other) {
     return *this;
 }
 
-short big_integer::compare(const big_integer &other) const {
+inline short big_integer::compare(const big_integer &other) const {
     if (digits.size() > other.digits.size()) {
         return 1;
     } else if (digits.size() == other.digits.size()) {
@@ -393,7 +376,7 @@ big_integer &big_integer::operator<<=(short shift) {
             uint32_t &digit = digits[i];
 
             result = (((uint64_t) (digit)) << shift1);
-            digit = (uint32_t) ((result & ((1LL << 33) - 1)) + propagate);
+            digit = (uint32_t) ((result & ((1ULL << 33) - 1)) + propagate);
             propagate = (result >> 32);
         }
         if (propagate != 0) {
