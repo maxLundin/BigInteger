@@ -34,7 +34,7 @@ big_integer::big_integer(big_integer &&other) noexcept {
     std::swap(digits, other.digits);
 }
 
-inline void big_integer::sub_equal(big_integer &a, const big_integer &b) {
+inline static void sub_equal(big_integer &a, const big_integer &b) {
     uint64_t carry = 0;
     size_t i = 0;
     for (; i < b.digits.size(); ++i) {
@@ -146,8 +146,6 @@ inline uint32_t big_integer::div_long_short(uint32_t number) {
 inline void big_integer::mul_long_short(uint32_t number) {
     uint32_t propagate = 0;
     for (uint32_t &digit : digits) {
-//    for (size_t i = 0; i < digits.size(); i++) {
-
         uint64_t result = (uint64_t) digit * (uint64_t) number + propagate;
         digit = (uint32_t) (result);
         propagate = (uint32_t) (result >> 32);
@@ -241,7 +239,7 @@ big_integer::big_integer(std::string const &number) {
     //std::cout << *this << std::endl;
 }
 
-void swap(big_integer &a, big_integer &b) {
+inline void swap(big_integer &a, big_integer &b) {
     using std::swap;
     swap(a.sign, b.sign);
     swap(a.digits, b.digits);
@@ -274,25 +272,20 @@ big_integer operator*(big_integer const &a, big_integer const &other) {
         return bigInt;
     }
 
-    big_integer bigInt(0);
+    big_integer bigInt(a.digits.size() + other.digits.size() + 1,true);
     bigInt.sign = a.sign * other.sign;
 
     uint64_t result;
     uint32_t pointer = 0;
     uint32_t pointer_copy = pointer;
-    bigInt.digits.resize(a.digits.size() + other.digits.size() + 1);
     for (uint32_t digit : a.digits) {
-    //for (size_t i = 0; i < a.digits.size(); i++) {
-        //uint32_t digit = a.digits[i];
         uint64_t propagate = 0;
         for (uint32_t digit1 : other.digits) {
-        //for (size_t j = 0; j < other.digits.size(); j++) {
-            //uint32_t digit1 = other.digits[j];
             result = (uint64_t) digit * (uint64_t) digit1 + propagate +
                      (uint64_t) bigInt.digits[pointer];
             bigInt.digits[pointer] = (uint32_t) result;
             propagate = result >> 32;
-            pointer++;
+            ++pointer;
         }
         if (bigInt.digits.size() <= pointer) {
             bigInt.digits.push_back(0);
@@ -414,12 +407,8 @@ big_integer &big_integer::operator>>=(short shift) {
     return *this;
 }
 
-void big_integer::divide(big_integer &res, big_integer const &a, big_integer const &b) {
-    if (b.digits.size() == 1) {
-        res = a;
-        res.div_long_short(b.digits[0]);
-        return;
-    }
+static void divide(big_integer &res, big_integer const &a, big_integer const &b) {
+
 
     short neg = a.compare(b);
 
@@ -453,7 +442,7 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
         size_t cur_pos = len - 1 - i;
 
         uint32_t tmp = (uint32_t) std::min(
-                ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] : 0) * MAX_UINT32_IN_UINT64 +
+                ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] * MAX_UINT32_IN_UINT64 : 0)  +
                  (m - 1 < dividend.digits.size() ? dividend.digits[m - 1] : 0)) / v.digits.back(),
                 MAX_UINT32_IN_UINT64 - 1);
 
@@ -462,8 +451,9 @@ void big_integer::divide(big_integer &res, big_integer const &a, big_integer con
 
         while (dividend < divider) {
             divider -= v;
-            tmp--;
+            --tmp;
         }
+
         sub_equal(dividend, divider);
         for (size_t j = m; j > 0; --j) {
             dividend.digits[j] = dividend.digits[j - 1];
@@ -481,7 +471,7 @@ big_integer operator/(big_integer const &Dividend, big_integer const &other) {
         return temp;
     }
     big_integer ans;
-    ans.divide(ans, Dividend, other);
+    divide(ans, Dividend, other);
     ans.sign = Dividend.sign * other.sign;
     return ans;
 }

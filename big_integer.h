@@ -92,9 +92,9 @@ struct big_integer {
 
     short compare(const big_integer &other) const;
 
-    void divide(big_integer &res, const big_integer &a, const big_integer &b);
+    static void divide(big_integer &res, const big_integer &a, const big_integer &b);
 
-    void sub_equal(big_integer &a, const big_integer &b);
+    static void sub_equal(big_integer &a, const big_integer &b);
 
     std::vector<unsigned int> digits;
 //    OptimizedArrayList digits;
