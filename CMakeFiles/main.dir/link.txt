@@ -1,1 +1,0 @@
-/usr/bin/c++   -Wall -std=c++11 -pedantic  -rdynamic CMakeFiles/main.dir/Main1.cpp.o CMakeFiles/main.dir/big_integer.cpp.o  -o main 

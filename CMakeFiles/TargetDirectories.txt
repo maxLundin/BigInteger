@@ -1,3 +1,0 @@
-/home/max/Documents/BigInteger/CMakeFiles/rebuild_cache.dir
-/home/max/Documents/BigInteger/CMakeFiles/edit_cache.dir
-/home/max/Documents/BigInteger/CMakeFiles/big_integer_testing.dir

@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <iomanip>
 
+
+
 struct big_integer {
 
     friend std::ostream &operator<<(std::ostream &, big_integer const&);
