@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <vector>
-#include "OptimizedArrayList.h"
+//#include "OptimizedArrayList.h"
 #include <string>
 #include <cstdlib>
 #include <algorithm>
@@ -98,7 +98,7 @@ struct big_integer {
 
     std::vector<unsigned int> digits;
 //    OptimizedArrayList digits;
-    int sign;
+    char sign;
 
 };
 

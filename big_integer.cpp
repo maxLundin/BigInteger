@@ -1,7 +1,7 @@
 #include <cmath>
 #include "big_integer.h"
 
-const uint64_t MAX_UINT32_IN_UINT64 = 4294967296u;
+#define MAX_UINT32_IN_UINT64 4294967296u
 
 big_integer::big_integer() {
     sign = 1;
@@ -51,8 +51,6 @@ inline static void sub_equal(big_integer &a, const big_integer &b) {
 
 big_integer &big_integer::operator+=(const big_integer &b) {
     big_integer other(b);
-    //other.digits.make_big();
-    //other.digits.data.big.use_count();
     big_integer n(*this);
     if (sign == other.sign) {
         uint64_t propagate = 0;
@@ -157,9 +155,7 @@ inline void big_integer::mul_long_short(uint32_t number) {
 
 void big_integer::add_long_short(uint32_t number) {
     uint32_t propagate = number;
-//    for (uint32_t &digit : digits) {
-    for (size_t i = 0; i < digits.size(); i++) {
-        uint32_t &digit = digits[i];
+    for (uint32_t &digit : digits) {
 
         uint64_t result = (uint64_t) digit + propagate;
         digit = (uint32_t) (result);
@@ -232,11 +228,8 @@ big_integer::big_integer(std::string const &number) {
     for (size_t i = start; i < number.size(); i++) {
         mul_long_short(10);
         add_long_short(toInteger(number[i]));
-
-
     }
     cutBadZero();
-    //std::cout << *this << std::endl;
 }
 
 inline void swap(big_integer &a, big_integer &b) {
@@ -348,12 +341,6 @@ bool operator<(const big_integer &a, const big_integer &other) {
 }
 
 big_integer &big_integer::operator<<=(short shift) {
-//    if (sign < 0) {
-//        *this = ~*this;
-//        *this = (*this <<= shift) += 1;
-//        sign = -1;
-//        return *this;
-//    }
     short shift1;
     while (shift > 0) {
         if (shift >= 16) {
@@ -408,11 +395,7 @@ big_integer &big_integer::operator>>=(short shift) {
 }
 
 static void divide(big_integer &res, big_integer const &a, big_integer const &b) {
-
-
     short neg = a.compare(b);
-
-    res.digits.clear();
 
     if (neg < 0) {
         res.digits.push_back(0);
