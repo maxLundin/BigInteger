@@ -22,4 +22,4 @@ if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined -D_GLIBCXX_DEBUG")
 endif ()
 
-target_link_libraries(big_integer_testing -lgmp -lgmpxx -lpthread)
+target_link_libraries(big_integer_testing -lpthread)
