@@ -100,7 +100,7 @@ struct big_integer {
 
     std::vector<unsigned int> digits;
 //    OptimizedArrayList digits;
-    char sign;
+    int8_t sign;
 
 };
 
