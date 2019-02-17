@@ -3,10 +3,7 @@
 
 #define MAX_UINT32_IN_UINT64 4294967296u
 
-big_integer::big_integer() {
-    sign = 1;
-    digits.push_back(0);
-}
+big_integer::big_integer() : digits{0}, sign(1) {}
 
 big_integer::big_integer(int x) {
     uint32_t num;
@@ -20,8 +17,7 @@ big_integer::big_integer(int x) {
     digits.push_back(num);
 }
 
-big_integer::big_integer(size_t x, bool) {
-    sign = 1;
+big_integer::big_integer(size_t x, bool) : sign(1) {
     digits.resize(x);
 }
 
@@ -31,21 +27,18 @@ big_integer::big_integer(const big_integer &other)
 
 big_integer::big_integer(big_integer &&other) noexcept {
     std::swap(sign, other.sign);
-    std::swap(digits, other.digits);
+    // std::swap(digits, other.digits);
+    // sign = std::move(other.digits);
+    digits = std::move(other.digits);
 }
 
-inline static void sub_equal(big_integer &a, const big_integer &b) {
+inline void sub_equal(big_integer &a, const big_integer &b) {
     uint64_t carry = 0;
     size_t i = 0;
     for (; i < b.digits.size(); ++i) {
         uint64_t tmp = (uint64_t) carry + b.digits[i];
         carry = (uint64_t) (a.digits[i] < tmp);
         a.digits[i] -= tmp;
-    }
-
-    for (; carry; ++i) {
-        carry = a.digits[i] - 1;
-        a.digits[i] -= 1;
     }
 }
 
@@ -100,7 +93,7 @@ big_integer &big_integer::operator-=(const big_integer &other) {
             }
         } else {
             big_integer m = other - n;
-            m.sign = sign * (-1);
+            m.sign = static_cast<int8_t>(sign * (-1));
             *this = m;
         }
     } else if (other.sign == -1) {
@@ -132,7 +125,7 @@ inline void big_integer::cutBadZero() {
 
 inline uint32_t big_integer::div_long_short(uint32_t number) {
     uint64_t propagate = 0;
-    for (auto i = digits.rbegin(); i != digits.rend(); ++i){
+    for (auto i = digits.rbegin(); i != digits.rend(); ++i) {
         uint64_t temp = (*i + (propagate << 32));
         *i = (uint32_t) (temp / number);
         propagate = temp % number;
@@ -156,7 +149,6 @@ inline void big_integer::mul_long_short(uint32_t number) {
 void big_integer::add_long_short(uint32_t number) {
     uint32_t propagate = number;
     for (uint32_t &digit : digits) {
-
         uint64_t result = (uint64_t) digit + propagate;
         digit = (uint32_t) (result);
         propagate = (uint32_t) (result >> 32);
@@ -188,7 +180,7 @@ inline uint32_t toInteger(char ch) {
 }
 
 std::string big_integer::to_string() const {
-    if (digits.size() == 0 || (digits.size() == 1 && digits[0] == 0)) {
+    if (digits.empty() || (digits.size() == 1 && digits[0] == 0)) {
         return "0";
     } else {
         big_integer BI(*this);
@@ -216,7 +208,7 @@ std::istream &operator>>(std::istream &stream, big_integer &curr) {
     return stream;
 }
 
-big_integer::big_integer(std::string const &number) {
+big_integer::big_integer(std::string const &number) : digits{0} {
     size_t start = 0;
     if (number[0] == '-') {
         sign = -1;
@@ -265,7 +257,7 @@ big_integer operator*(big_integer const &a, big_integer const &other) {
         return bigInt;
     }
 
-    big_integer bigInt(a.digits.size() + other.digits.size() + 1,true);
+    big_integer bigInt(a.digits.size() + other.digits.size() + 1, true);
     bigInt.sign = a.sign * other.sign;
 
     uint64_t result;
@@ -351,10 +343,7 @@ big_integer &big_integer::operator<<=(short shift) {
         shift -= shift1;
         uint64_t result;
         uint64_t propagate = 0;
-//        for (uint32_t &digit : digits) {
-        for (size_t i = 0; i < digits.size(); i++) {
-            uint32_t &digit = digits[i];
-
+        for (uint32_t &digit : digits) {
             result = (((uint64_t) (digit)) << shift1);
             digit = (uint32_t) ((result & ((1ULL << 33) - 1)) + propagate);
             propagate = (result >> 32);
@@ -394,7 +383,8 @@ big_integer &big_integer::operator>>=(short shift) {
     return *this;
 }
 
-static void divide(big_integer &res, big_integer const &a, big_integer const &b) {
+void divide(big_integer &res, big_integer const &a, big_integer const &b) {
+
     short neg = a.compare(b);
 
     if (neg < 0) {
@@ -406,12 +396,14 @@ static void divide(big_integer &res, big_integer const &a, big_integer const &b)
         return;
     }
 
+
     auto d = (uint32_t) (MAX_UINT32_IN_UINT64 / (b.digits.back() + 1));
     big_integer u(a), v(b);
     u.mul_long_short(d);
     v.mul_long_short(d);
     u.cutBadZero();
     v.cutBadZero();
+
     size_t n = u.digits.size(), m = v.digits.size(), len = n - m + 1;
     res.digits.resize(len);
     big_integer dividend(m + 1, true), divider;
@@ -423,9 +415,8 @@ static void divide(big_integer &res, big_integer const &a, big_integer const &b)
     for (size_t i = 0; i < len; ++i) {
         dividend.digits[0] = u.digits[n - m - i];
         size_t cur_pos = len - 1 - i;
-
         uint32_t tmp = (uint32_t) std::min(
-                ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] * MAX_UINT32_IN_UINT64 : 0)  +
+                ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] * MAX_UINT32_IN_UINT64 : 0) +
                  (m - 1 < dividend.digits.size() ? dividend.digits[m - 1] : 0)) / v.digits.back(),
                 MAX_UINT32_IN_UINT64 - 1);
 
@@ -447,6 +438,7 @@ static void divide(big_integer &res, big_integer const &a, big_integer const &b)
 }
 
 big_integer operator/(big_integer const &Dividend, big_integer const &other) {
+
     if (other.digits.size() == 1) {
         big_integer temp(Dividend);
         temp.div_long_short(other.digits[0]);
@@ -588,10 +580,7 @@ big_integer big_integer::operator+() const {
 }
 
 big_integer big_integer::reverseIt() {
-//    for (uint32_t &digit : digits) {
-    for (size_t i = 0; i < digits.size(); i++) {
-        uint32_t &digit = digits[i];
-
+    for (uint32_t &digit : digits) {
         digit = ~digit;
     }
     return *this;
@@ -612,7 +601,7 @@ big_integer &big_integer::operator--() {
 }
 
 std::string to_string(big_integer const &a) {
-    if (a.digits.size() == 0 || (a.digits.size() == 1 && a.digits[0] == 0)) {
+    if (a.digits.empty() || (a.digits.size() == 1 && a.digits[0] == 0)) {
         return "0";
     } else {
         big_integer BI(a);

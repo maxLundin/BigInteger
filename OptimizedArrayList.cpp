@@ -9,21 +9,18 @@ OptimizedArrayList::OptimizedArrayList() : _size(0), isSmall(true) {
     data.small = 0;
 }
 
-void OptimizedArrayList::make_big() {
-    if (!isSmall)
-        return;
-
-    isSmall = false;
-
-    uint32_t mas;
-
-    mas = data.small;
-
-    vector<uint32_t> *vect = new vector<uint32_t>(_size);
-
-    new(&data.big) std::shared_ptr<std::vector<uint32_t>>(vect);
-
-    (*data.big.get())[0] = mas;
+OptimizedArrayList::OptimizedArrayList(OptimizedArrayList &&other) noexcept {
+    _size = other._size;
+    isSmall = other.isSmall;
+    if (isSmall) {
+        data.small = other.data.small;
+    } else {
+        new(&data.big) std::shared_ptr<vector<uint32_t>>(other.data.big);
+        other.isSmall = true;
+        other.data.big.~shared_ptr();
+        other.data.small = 0;
+        other._size = 0;
+    }
 }
 
 OptimizedArrayList::OptimizedArrayList(OptimizedArrayList const &other) {
@@ -36,6 +33,18 @@ OptimizedArrayList::OptimizedArrayList(OptimizedArrayList const &other) {
     }
 }
 
+OptimizedArrayList::OptimizedArrayList(std::initializer_list<uint32_t> list) {
+    isSmall = (list.size() <= 1);
+    _size = list.size();
+    if (!isSmall) {
+        vector<uint32_t> *vect = new vector<uint32_t>(list);
+        new(&data.big) std::shared_ptr<vector<uint32_t >>(vect);
+    } else {
+        data.small = *list.begin();
+    }
+}
+
+
 OptimizedArrayList &OptimizedArrayList::operator=(OptimizedArrayList const &other) {
     _size = other._size;
 
@@ -46,14 +55,7 @@ OptimizedArrayList &OptimizedArrayList::operator=(OptimizedArrayList const &othe
 
         data.small = other.data.small;
     } else {
-
-        //      shared_ptr<std::vector<uint32_t> > tmp;
         new(&data.big) std::shared_ptr<vector<uint32_t>>(other.data.big);
-//        swap(tmp, data.big);
-//        if (!isSmall) {
-//            tmp.reset();
-//        }
-
     }
     isSmall = other.isSmall;
     return *this;
@@ -65,7 +67,7 @@ size_t OptimizedArrayList::size() const {
 
 uint32_t OptimizedArrayList::back() const {
     assert(_size > 0);
-    return (isSmall ? data.small : (*data.big.get())[_size - 1]);
+    return (isSmall ? data.small : data.big->back());
 }
 
 void OptimizedArrayList::push_back(uint32_t const x) {
@@ -80,6 +82,21 @@ void OptimizedArrayList::push_back(uint32_t const x) {
     _size++;
 }
 
+void OptimizedArrayList::make_big() {
+    if (!isSmall)
+        return;
+
+    isSmall = false;
+
+    uint32_t mas = data.small;
+
+    vector<uint32_t> *vect = new vector<uint32_t>(_size);
+
+    new(&data.big) std::shared_ptr<std::vector<uint32_t>>(vect);
+
+    (*data.big.get())[0] = mas;
+}
+
 void OptimizedArrayList::pop_back() {
     assert(_size > 0);
     _size--;
@@ -90,7 +107,6 @@ void OptimizedArrayList::pop_back() {
     (*data.big.get()).pop_back();
     if (data.big->size() == 1) {
         uint32_t tmp = data.big->back();
-        //data.big.reset();
         data.big.~shared_ptr();
         isSmall = true;
         data.small = tmp;
