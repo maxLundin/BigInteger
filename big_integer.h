@@ -116,11 +116,9 @@ private:
 
     friend void divide(big_integer &res, const big_integer &a, const big_integer &b);
 
-    friend void sub_equal(big_integer &a, const big_integer &b);
-
     friend void sub(big_integer &a, const big_integer &b);
 
-    std::vector<uint32_t > digits;
+    std::vector<uint32_t> digits;
 //    OptimizedArrayList digits;
     int8_t sign;
 

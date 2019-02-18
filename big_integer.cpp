@@ -27,19 +27,7 @@ big_integer::big_integer(const big_integer &other)
 
 big_integer::big_integer(big_integer &&other) noexcept {
     std::swap(sign, other.sign);
-    // std::swap(digits, other.digits);
-    // sign = std::move(other.digits);
     digits = std::move(other.digits);
-}
-
-inline void sub_equal(big_integer &a, const big_integer &b) {
-    uint64_t carry = 0;
-    size_t i = 0;
-    for (; i < b.digits.size(); ++i) {
-        uint64_t tmp = (uint64_t) carry + b.digits[i];
-        carry = (uint64_t) (a.digits[i] < tmp);
-        a.digits[i] -= tmp;
-    }
 }
 
 big_integer &big_integer::operator+=(const big_integer &b) {
@@ -51,12 +39,8 @@ big_integer &big_integer::operator+=(const big_integer &b) {
     big_integer n(*this);
     if (sign == other.sign) {
         uint64_t propagate = 0;
-
         digits.resize(other.digits.size());
 
-        while (digits.size() > other.digits.size()) {
-            other.digits.push_back(0);
-        }
         for (uint32_t i = 0; i < digits.size(); i++) {
             uint64_t result = (uint64_t) other.digits[i]
                               + (uint64_t) digits[i]
@@ -393,16 +377,11 @@ big_integer &big_integer::operator>>=(short shift) {
 
 void divide(big_integer &res, big_integer const &a, big_integer const &b) {
 
-    short neg = a.compare(b);
+    if (auto neg = a.compare(b); neg <= 0) {
+        res.digits.push_back(neg == 0);
+        return;
+    }
 
-    if (neg < 0) {
-        res.digits.push_back(0);
-        return;
-    }
-    if (neg == 0) {
-        res.digits.push_back(1);
-        return;
-    }
 
     auto d = (uint32_t) (MAX_UINT32_IN_UINT64 / (b.digits.back() + 1));
     big_integer u(a), v(b);
@@ -435,7 +414,14 @@ void divide(big_integer &res, big_integer const &a, big_integer const &b) {
             --tmp;
         }
 
-        sub_equal(dividend, divider);
+        uint64_t carry = 0;
+        size_t i1 = 0;
+        for (; i1 < dividend.digits.size(); ++i1) {
+            uint64_t tmp1 = (uint64_t) carry + divider.digits[i1];
+            carry = (uint64_t) (dividend.digits[i1] < tmp1);
+            dividend.digits[i1] -= tmp1;
+        }
+
         for (size_t j = m; j > 0; --j) {
             dividend.digits[j] = dividend.digits[j - 1];
         }
