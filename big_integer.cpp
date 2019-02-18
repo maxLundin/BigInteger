@@ -43,13 +43,17 @@ inline void sub_equal(big_integer &a, const big_integer &b) {
 }
 
 big_integer &big_integer::operator+=(const big_integer &b) {
+    if ((sign == b.sign) && b.digits.size() == 1) {
+        add_long_short(b.digits[0]);
+        return *this;
+    }
     big_integer other(b);
     big_integer n(*this);
     if (sign == other.sign) {
         uint64_t propagate = 0;
-        while (digits.size() < other.digits.size()) {
-            digits.push_back(0);
-        }
+
+        digits.resize(other.digits.size());
+
         while (digits.size() > other.digits.size()) {
             other.digits.push_back(0);
         }
@@ -76,21 +80,25 @@ big_integer &big_integer::operator+=(const big_integer &b) {
     return *this;
 }
 
+inline void sub(big_integer &a, const big_integer &b) {
+    uint32_t propagate = 0;
+    size_t i = 0;
+    for (; i < b.digits.size(); ++i) {
+        uint64_t result = (uint64_t) b.digits[i]
+                          + (uint64_t) propagate;
+        propagate = (uint32_t) (a.digits[i] < result);
+        a.digits[i] -= result;
+    }
+    if (propagate) {
+        a.digits[b.digits.size()] -= propagate;
+    }
+}
+
 big_integer &big_integer::operator-=(const big_integer &other) {
     big_integer n(*this);
     if (sign == other.sign) {
         if (n.compare_without_sign_and_equals(other)) {
-            uint32_t propagate = 0;
-            size_t i = 0;
-            for (; i < other.digits.size(); ++i) {
-                uint64_t result = (uint64_t) other.digits[i]
-                                  + (uint64_t) propagate;
-                propagate = (uint32_t) (digits[i] < result);
-                digits[i] -= result;
-            }
-            if (propagate) {
-                digits[other.digits.size()] -= propagate;
-            }
+            sub(*this, other);
         } else {
             big_integer m = other - n;
             m.sign = static_cast<int8_t>(sign * (-1));
@@ -396,7 +404,6 @@ void divide(big_integer &res, big_integer const &a, big_integer const &b) {
         return;
     }
 
-
     auto d = (uint32_t) (MAX_UINT32_IN_UINT64 / (b.digits.back() + 1));
     big_integer u(a), v(b);
     u.mul_long_short(d);
@@ -408,13 +415,13 @@ void divide(big_integer &res, big_integer const &a, big_integer const &b) {
     res.digits.resize(len);
     big_integer dividend(m + 1, true), divider;
 
-    for (size_t i = 0; i < m; ++i) {
-        dividend.digits[i] = u.digits[n + i - m];
-    }
+    memcpy(dividend.digits.data(), u.digits.data() + n - m, m * sizeof(uint32_t));
+
     dividend.digits[m] = n < u.digits.size() ? u.digits[n] : 0;
     for (size_t i = 0; i < len; ++i) {
         dividend.digits[0] = u.digits[n - m - i];
         size_t cur_pos = len - 1 - i;
+
         uint32_t tmp = (uint32_t) std::min(
                 ((uint64_t) (m < dividend.digits.size() ? dividend.digits[m] * MAX_UINT32_IN_UINT64 : 0) +
                  (m - 1 < dividend.digits.size() ? dividend.digits[m - 1] : 0)) / v.digits.back(),
@@ -424,7 +431,7 @@ void divide(big_integer &res, big_integer const &a, big_integer const &b) {
         divider.mul_long_short(tmp);
 
         while (dividend < divider) {
-            divider -= v;
+            sub(divider, v);
             --tmp;
         }
 

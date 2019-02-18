@@ -112,13 +112,13 @@ private:
 
     unsigned int div_long_short(unsigned int number);
 
-//    unsigned int div_long_by_10();
-
     short compare(const big_integer &other) const;
 
     friend void divide(big_integer &res, const big_integer &a, const big_integer &b);
 
     friend void sub_equal(big_integer &a, const big_integer &b);
+
+    friend void sub(big_integer &a, const big_integer &b);
 
     std::vector<uint32_t > digits;
 //    OptimizedArrayList digits;
