@@ -40,7 +40,6 @@ big_integer &big_integer::operator+=(const big_integer &b) {
     if (sign == other.sign) {
         uint64_t propagate = 0;
         digits.resize(other.digits.size());
-
         for (uint32_t i = 0; i < digits.size(); i++) {
             uint64_t result = (uint64_t) other.digits[i]
                               + (uint64_t) digits[i]
@@ -416,7 +415,8 @@ void divide(big_integer &res, big_integer const &a, big_integer const &b) {
 
         uint64_t carry = 0;
         size_t i1 = 0;
-        for (; i1 < dividend.digits.size(); ++i1) {
+        size_t maxSize = std::min(dividend.digits.size(), divider.digits.size());
+        for (; i1 < maxSize; ++i1) {
             uint64_t tmp1 = (uint64_t) carry + divider.digits[i1];
             carry = (uint64_t) (dividend.digits[i1] < tmp1);
             dividend.digits[i1] -= tmp1;
