@@ -83,7 +83,7 @@ struct big_integer {
 
     friend big_integer operator>>(big_integer a, int b);
 
-    friend void swap(big_integer &a, big_integer &b);
+    friend void swap(big_integer &a, big_integer &b) noexcept;
 
     big_integer operator+() const;
 
@@ -156,6 +156,6 @@ bool operator<=(big_integer const &a, big_integer const &b);
 
 bool operator>=(big_integer const &a, big_integer const &b);
 
-void swap(big_integer &a, big_integer &b);
+void swap(big_integer &a, big_integer &b) noexcept;
 
 void divide(big_integer &res, const big_integer &a, const big_integer &b);
