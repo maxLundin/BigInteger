@@ -1,5 +1,7 @@
-#include <cmath>
 #include "big_integer.h"
+
+#include <algorithm>
+#include <cmath>
 
 constexpr uint64_t MAX_UINT32_IN_UINT64 = 4294967296ull;
 
@@ -21,29 +23,22 @@ big_integer::big_integer(size_t x, bool) : sign(1) {
     digits.resize(x);
 }
 
-big_integer::big_integer(const big_integer &other)
-        : digits(other.digits), sign(other.sign) {
-}
-
-big_integer::big_integer(big_integer &&other) noexcept {
-    std::swap(sign, other.sign);
-    digits = std::move(other.digits);
-}
-
 big_integer &big_integer::operator+=(const big_integer &b) {
     if ((sign == b.sign) && b.digits.size() == 1) {
         add_long_short(b.digits[0]);
         return *this;
     }
     if (sign == b.sign) {
-        bool propagate = 0;
-        digits.resize(b.digits.size());
-        for (size_t i = 0; i < digits.size(); i++) {
+        uint64_t propagate = 0;
+        if (b.digits.size() > digits.size()) {
+            digits.resize(b.digits.size());
+        }
+        for (size_t i = 0; i < b.digits.size(); i++) {
             uint64_t result = (uint64_t) b.digits[i]
                               + (uint64_t) digits[i]
                               + propagate;
-            propagate = (result > ((1ull << 32) - 1));
-            digits[i] = (uint32_t) (result);
+            propagate = (result >> 32u);
+            digits[i] = result;
         }
         if (propagate) {
             digits.push_back((uint32_t) propagate);
@@ -82,7 +77,7 @@ big_integer &big_integer::operator-=(const big_integer &other) {
         } else {
             big_integer m = other - (*this);
             m.sign = static_cast<int8_t>(sign * (-1));
-            *this = std::move(m);
+            swap(*this, m);
         }
     } else if (other.sign == -1) {
         big_integer m(other);
@@ -106,8 +101,10 @@ big_integer operator+(big_integer a, big_integer const &b) {
 }
 
 inline void big_integer::cutBadZero() {
-    while (digits.size() > 1 && digits.back() == 0) {
+    auto size = digits.size();
+    while (digits.back() == 0 && size > 1) {
         digits.pop_back();
+        --size;
     }
 }
 
@@ -123,11 +120,11 @@ inline uint32_t big_integer::div_long_short(uint32_t number) {
 }
 
 inline void big_integer::mul_long_short(uint32_t number) {
-    uint32_t propagate = 0;
+    uint64_t propagate = 0;
     for (uint32_t &digit : digits) {
         uint64_t result = (uint64_t) digit * (uint64_t) number + propagate;
-        digit = (uint32_t) (result);
-        propagate = (uint32_t) (result >> 32);
+        digit = result;
+        propagate = (result >> 32);
     }
     if (propagate) {
         digits.push_back(propagate);
@@ -135,32 +132,18 @@ inline void big_integer::mul_long_short(uint32_t number) {
 }
 
 void big_integer::add_long_short(uint32_t number) {
-    uint32_t propagate = number;
+    uint64_t propagate = number;
     for (uint32_t &digit : digits) {
-        uint64_t result = (uint64_t) digit + propagate;
-        digit = (uint32_t) (result);
-        propagate = (uint32_t) (result >> 32);
-        if (propagate == 0) {
+        const uint64_t result = (uint64_t) digit + propagate;
+        digit = result;
+        propagate = (result >> 32);
+        if (0 == propagate) {
             break;
         }
     }
     if (propagate) {
-        digits.push_back((uint32_t) propagate);
+        digits.push_back(propagate);
     }
-}
-
-std::string toString(uint64_t number) {
-    std::string str;
-    if (number == 0) {
-        return "0";
-    }
-    uint64_t numb;
-    while (number > 0) {
-        numb = number;
-        number = ((429496729ull * (uint64_t) number) >> 32);
-        str += std::to_string(numb - (number * 10));
-    }
-    return str;
 }
 
 inline uint32_t toInteger(char ch) {
@@ -175,8 +158,7 @@ std::string big_integer::to_string() const {
         std::string outStr;
 
         while (!(BI.digits.size() == 1 && BI.digits[0] == 0)) {
-            uint32_t out = BI.div_long_short(10);
-            outStr += toString(out);
+            outStr += std::to_string(BI.div_long_short(10));
         }
         outStr += (BI.sign == 1 ? "" : "-");
         std::reverse(outStr.begin(), outStr.end());
@@ -289,7 +271,7 @@ inline short big_integer::compare(const big_integer &other) const {
         }
         return 0;
     } else {
-        return 0;
+        return -1;
     }
 }
 
@@ -608,5 +590,3 @@ big_integer operator>>(big_integer a, int b) {
     }
     return a >>= b;
 }
-
-big_integer &big_integer::operator=(big_integer const &other) = default;

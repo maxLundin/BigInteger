@@ -1,19 +1,18 @@
 #pragma once
 
+//#include "OptimizedArrayList.h"
+
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <vector>
-#include <string>
-#include <cstdlib>
-#include <algorithm>
-#include <iomanip>
-#include "OptimizedArrayList.h"
 
 
 struct big_integer {
 
     big_integer();
 
-    big_integer(big_integer const &other);
+    big_integer(const big_integer &other) = default;
 
     big_integer(int a);
 
@@ -23,13 +22,13 @@ struct big_integer {
 
     ~big_integer() = default;
 
-    big_integer(big_integer &&) noexcept;
+    big_integer(big_integer &&other) = default;
 
     friend std::ostream &operator<<(std::ostream &, big_integer const &);
 
     friend std::istream &operator>>(std::istream &, big_integer &);
 
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
 
     big_integer &operator/=(big_integer const &rhs);
 
@@ -95,7 +94,9 @@ struct big_integer {
 
     big_integer &operator--();
 
-    big_integer &operator=(big_integer const &other);
+    big_integer &operator=(big_integer const &other) = default;
+
+    big_integer &operator=(big_integer &&other) = default;
 
 private:
     void cutBadZero();
@@ -112,7 +113,7 @@ private:
 
     unsigned int div_long_short(unsigned int number);
 
-    short compare(const big_integer &other) const;
+    [[nodiscard]] short compare(const big_integer &other) const;
 
     friend void divide(big_integer &res, const big_integer &a, const big_integer &b);
 
